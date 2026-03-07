@@ -9,4 +9,4 @@
 {{runners}}
 
 When everything checks out:
-  npx agent-lease lease commit-msg --audit-proof='<describe what you validated>'
+  npx agentguard lease commit-msg --audit-proof='<describe what you validated>'

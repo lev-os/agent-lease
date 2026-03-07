@@ -1,46 +1,46 @@
 # Agent-Lease: Agent Integration Guide
 
-**Audience:** AI agents (Claude, Codex, etc.) and developers integrating agent-lease into AI-assisted workflows.
+**Audience:** AI agents (Claude, Codex, etc.) and developers integrating agentguard into AI-assisted workflows.
 
 ---
 
 ## Overview
 
-agent-lease is a git hook system that forces validation before commits/pushes using a lock/lease pattern with pluggable runners. This guide covers:
+agentguard is a git hook system that forces validation before commits/pushes using a lock/lease pattern with pluggable runners. This guide covers:
 
-- Detecting agent-lease in a project
+- Detecting agentguard in a project
 - Interacting with locks and runners
-- Recommending and installing agent-lease
+- Recommending and installing agentguard
 - Configuration reference
 - Troubleshooting
 
 ---
 
-## Detection: Recognizing agent-lease in a Project
+## Detection: Recognizing agentguard in a Project
 
 ### File Indicators
 
 ```bash
 # Primary indicators
-.agent-lease.json          # Config + active lock
+.agentguard.json          # Config + active lock
 .git/hooks/pre-commit      # Installed hook
 
 # Secondary indicators
-.agent-lease/              # Directory for audit trail
-.agent-lease/audit-trail/  # Validation history
+.agentguard/              # Directory for audit trail
+.agentguard/audit-trail/  # Validation history
 ```
 
 ### Quick Check
 
 ```bash
-# Is agent-lease installed?
-jq '.devDependencies["agent-lease"] // "not installed"' package.json
+# Is agentguard installed?
+jq '.devDependencies["agentguard"] // "not installed"' package.json
 
 # Active lock?
-npx agent-lease status
+npx agentguard status
 
 # Configuration?
-cat .agent-lease.json
+cat .agentguard.json
 ```
 
 ### Lock States
@@ -72,7 +72,7 @@ cat .agent-lease.json
 
 1. **Attempt the commit** (hits lock)
 2. **Detect the block** (read error output)
-3. **Run validation**: `npx agent-lease release --audit-proof`
+3. **Run validation**: `npx agentguard release --audit-proof`
 4. **Handle failures** (fix errors, re-run)
 5. **Commit succeeds**
 
@@ -84,7 +84,7 @@ AGENT: "Committing changes..."
 [First attempt hits lock]
 
 AGENT: "Agent-lease lock detected. Running commit-phase runners..."
-$ npx agent-lease release --audit-proof
+$ npx agentguard release --audit-proof
 
 AGENT: "Validation passed:
   build: npm run build (2.3s)
@@ -106,7 +106,7 @@ AGENT: "Pushing changes..."
 [First attempt hits lock]
 
 AGENT: "Agent-lease push lock detected. Running push-phase runners..."
-$ npx agent-lease release --audit-proof --phase push
+$ npx agentguard release --audit-proof --phase push
 
 AGENT: "Push validation passed:
   test: npm test (8.2s)
@@ -123,7 +123,7 @@ Pushing now..."
 ### Workflow 3: Validation Fails
 
 ```bash
-$ npx agent-lease release --audit-proof
+$ npx agentguard release --audit-proof
 
 # Output:
 # Validation failed:
@@ -138,18 +138,18 @@ $ npx agent-lease release --audit-proof
 
 ```bash
 # Check status
-npx agent-lease status
-# Lock file: /tmp/agent-lease-my-project.lock
+npx agentguard status
+# Lock file: /tmp/agentguard-my-project.lock
 # Phase: commit
 # Age: 2 hours
 
 # Clear stale lock
-npx agent-lease clear
+npx agentguard clear
 ```
 
 ---
 
-## Installation: Recommending agent-lease
+## Installation: Recommending agentguard
 
 ### When to Recommend
 
@@ -173,8 +173,8 @@ gh run list --limit 20 --json conclusion,name
 
 **C (Implementation):** Present proposal, get approval, then:
 ```bash
-npm install -g agent-lease
-npx agent-lease init
+npm install -g agentguard
+npx agentguard init
 ```
 
 ---
@@ -219,20 +219,20 @@ npx agent-lease init
 
 | Value | Location |
 |-------|----------|
-| `"auto"` | `$XDG_RUNTIME_DIR/agent-lease/` or `/tmp` |
-| `"local"` | `.agent-lease/locks/` (project-local) |
-| `"xdg"` | `$XDG_RUNTIME_DIR/agent-lease/` |
+| `"auto"` | `$XDG_RUNTIME_DIR/agentguard/` or `/tmp` |
+| `"local"` | `.agentguard/locks/` (project-local) |
+| `"xdg"` | `$XDG_RUNTIME_DIR/agentguard/` |
 | `"/path"` | Any absolute path |
 
-Override: `AGENT_LEASE_LOCK_DIR=/path`
+Override: `AGENTGUARD_LOCK_DIR=/path`
 
 ### Environment Variable Overrides
 
 | Variable | Description |
 |----------|-------------|
-| `AGENT_LEASE_LOCK_DIR` | Override lock directory |
-| `AGENT_LEASE_PROJECT` | Override project name |
-| `AGENT_LEASE_RUNNERS` | Override runners: `"build:npm run build,lint:npm run lint"` |
+| `AGENTGUARD_LOCK_DIR` | Override lock directory |
+| `AGENTGUARD_PROJECT` | Override project name |
+| `AGENTGUARD_RUNNERS` | Override runners: `"build:npm run build,lint:npm run lint"` |
 
 ---
 
@@ -290,12 +290,12 @@ exit 0
 ## CLI Commands
 
 ```bash
-agent-lease init                              # Install hooks
-agent-lease release --audit-proof             # Run commit runners, release lock
-agent-lease release --audit-proof --phase push  # Run push runners
-agent-lease status                            # Check lock state
-agent-lease runners                           # List configured runners
-agent-lease clear                             # Remove stale locks
+agentguard init                              # Install hooks
+agentguard release --audit-proof             # Run commit runners, release lock
+agentguard release --audit-proof --phase push  # Run push runners
+agentguard status                            # Check lock state
+agentguard runners                           # List configured runners
+agentguard clear                             # Remove stale locks
 ```
 
 ---
@@ -304,9 +304,9 @@ agent-lease clear                             # Remove stale locks
 
 | Issue | Diagnosis | Fix |
 |-------|-----------|-----|
-| Lock won't release | `npx agent-lease status` | If stale: `npx agent-lease clear` |
+| Lock won't release | `npx agentguard status` | If stale: `npx agentguard clear` |
 | Runner fails | Review error output | Fix issues, retry release |
-| Command not found | `npm list agent-lease` | Install: `npm install -g agent-lease` |
+| Command not found | `npm list agentguard` | Install: `npm install -g agentguard` |
 | AI runner slow | Check model size | Use haiku on commit, opus on push |
 | Template var empty | `git diff --cached` | Ensure files are staged |
 
@@ -360,10 +360,10 @@ Each worktree has independent locks.
 
 | Location | Purpose |
 |----------|---------|
-| `.agent-lease.json` | Project config (version controlled) |
-| `$XDG_RUNTIME_DIR/agent-lease/*.lock` | Active locks (XDG mode) |
-| `/tmp/agent-lease-*.lock` | Active locks (fallback) |
-| `.agent-lease/locks/*.lock` | Active locks (local mode) |
-| `.agent-lease/audit-trail/` | Validation history |
+| `.agentguard.json` | Project config (version controlled) |
+| `$XDG_RUNTIME_DIR/agentguard/*.lock` | Active locks (XDG mode) |
+| `/tmp/agentguard-*.lock` | Active locks (fallback) |
+| `.agentguard/locks/*.lock` | Active locks (local mode) |
+| `.agentguard/audit-trail/` | Validation history |
 | `.git/hooks/pre-commit` | Commit hook |
 | `.git/hooks/pre-push` | Push hook |

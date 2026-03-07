@@ -8,7 +8,7 @@ The proof protocol ensures every validation runner produces verifiable, auditabl
 
 ### 1. Runner Execution
 
-When `agent-lease release` is invoked, each configured runner executes in sequence:
+When `agentguard release` is invoked, each configured runner executes in sequence:
 
 ```
 Runner "typecheck" --> tsc --noEmit --> stdout captured
@@ -39,20 +39,20 @@ The 7-character truncation provides sufficient uniqueness for referencing while 
 Full runner output is archived to:
 
 ```
-.agent-lease/proofs/{proof_hash}.txt
+.agentguard/proofs/{proof_hash}.txt
 ```
 
 Example:
 ```
-.agent-lease/proofs/a1b2c3d.txt   # typecheck output
-.agent-lease/proofs/e4f5g6h.txt   # lint output
-.agent-lease/proofs/i7j8k9l.txt   # haiku review output
+.agentguard/proofs/a1b2c3d.txt   # typecheck output
+.agentguard/proofs/e4f5g6h.txt   # lint output
+.agentguard/proofs/i7j8k9l.txt   # haiku review output
 ```
 
 ## Archive Structure
 
 ```
-.agent-lease/
+.agentguard/
   proofs/
     a1b2c3d.txt                    # Individual runner proof (by hash)
     e4f5g6h.txt                    # Individual runner proof (by hash)
@@ -90,7 +90,7 @@ All checks passed.
       "exit_code": 0,
       "duration_ms": 2300,
       "proof_hash": "a1b2c3d",
-      "proof_file": ".agent-lease/proofs/a1b2c3d.txt"
+      "proof_file": ".agentguard/proofs/a1b2c3d.txt"
     },
     {
       "name": "lint",
@@ -100,7 +100,7 @@ All checks passed.
       "exit_code": 0,
       "duration_ms": 1100,
       "proof_hash": "e4f5g6h",
-      "proof_file": ".agent-lease/proofs/e4f5g6h.txt"
+      "proof_file": ".agentguard/proofs/e4f5g6h.txt"
     },
     {
       "name": "haiku",
@@ -110,7 +110,7 @@ All checks passed.
       "exit_code": 0,
       "duration_ms": 4700,
       "proof_hash": "i7j8k9l",
-      "proof_file": ".agent-lease/proofs/i7j8k9l.txt"
+      "proof_file": ".agentguard/proofs/i7j8k9l.txt"
     }
   ],
   "summary": {
@@ -131,18 +131,18 @@ feat: add input validation
 
 Implemented form validation with zod schemas.
 
-agent-lease-proof: typecheck=a1b2c3d lint=e4f5g6h haiku=i7j8k9l
-agent-lease-duration: typecheck=2.3s lint=1.1s haiku=4.7s
-agent-lease-report: .agent-lease/proofs/commit-abc1234.json
+agentguard-proof: typecheck=a1b2c3d lint=e4f5g6h haiku=i7j8k9l
+agentguard-duration: typecheck=2.3s lint=1.1s haiku=4.7s
+agentguard-report: .agentguard/proofs/commit-abc1234.json
 ```
 
 ### Trailer Definitions
 
 | Trailer                | Content                                          |
 |------------------------|--------------------------------------------------|
-| `agent-lease-proof`    | Space-separated `runner=hash` pairs              |
-| `agent-lease-duration` | Space-separated `runner=duration` pairs           |
-| `agent-lease-report`   | Path to consolidated JSON report                 |
+| `agentguard-proof`    | Space-separated `runner=hash` pairs              |
+| `agentguard-duration` | Space-separated `runner=duration` pairs           |
+| `agentguard-report`   | Path to consolidated JSON report                 |
 
 ## How to Verify Proof
 
@@ -151,34 +151,34 @@ Given a commit with trailers, anyone can verify the proof:
 ### Step 1: Read the trailer
 
 ```bash
-git log -1 --format='%(trailers:key=agent-lease-proof)'
+git log -1 --format='%(trailers:key=agentguard-proof)'
 # Output: typecheck=a1b2c3d lint=e4f5g6h haiku=i7j8k9l
 ```
 
 ### Step 2: Look up the proof file
 
 ```bash
-cat .agent-lease/proofs/a1b2c3d.txt
+cat .agentguard/proofs/a1b2c3d.txt
 # Shows the full typecheck output
 ```
 
 ### Step 3: Verify the hash
 
 ```bash
-sha256sum .agent-lease/proofs/a1b2c3d.txt | cut -c1-7
+sha256sum .agentguard/proofs/a1b2c3d.txt | cut -c1-7
 # Should output: a1b2c3d
 ```
 
 ### Step 4: Read the consolidated report
 
 ```bash
-cat .agent-lease/proofs/commit-abc1234.json | jq .
+cat .agentguard/proofs/commit-abc1234.json | jq .
 # Full structured report with all runners, statuses, durations
 ```
 
 ## Proof Retention
 
-By default, proofs are retained indefinitely. Projects can configure retention in `.agent-lease.json`:
+By default, proofs are retained indefinitely. Projects can configure retention in `.agentguard.json`:
 
 ```json
 {
@@ -195,16 +195,16 @@ By default, proofs are retained indefinitely. Projects can configure retention i
 
 ## Gitignore Considerations
 
-The `.agent-lease/proofs/` directory should generally be committed to the repository for full auditability. However, for large projects or projects with frequent commits, it may be appropriate to gitignore proofs and archive them externally:
+The `.agentguard/proofs/` directory should generally be committed to the repository for full auditability. However, for large projects or projects with frequent commits, it may be appropriate to gitignore proofs and archive them externally:
 
 ```gitignore
 # Option A: Keep proofs in git (recommended for small teams)
 # (don't gitignore anything)
 
 # Option B: External archival (large teams / CI)
-.agent-lease/proofs/*.txt
+.agentguard/proofs/*.txt
 # Keep reports for reference
-!.agent-lease/proofs/commit-*.json
+!.agentguard/proofs/commit-*.json
 ```
 
 ## Security Properties

@@ -13,4 +13,4 @@
 {{runners}}
 
 When everything checks out:
-  npx agent-lease lease pre-commit --audit-proof='<describe what you validated>'
+  npx agentguard lease pre-commit --audit-proof='<describe what you validated>'

@@ -11,4 +11,4 @@ Args: {{args}}
 {{runners}}
 
 When everything checks out:
-  npx agent-lease lease {{topic}} --audit-proof='<describe what you validated>'
+  npx agentguard lease {{topic}} --audit-proof='<describe what you validated>'

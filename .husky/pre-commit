@@ -1,3 +1,5 @@
 #!/bin/bash
-# agent-lease pre-commit hook via husky
-npx agent-lease --hook pre-commit
+if command -v agentguard >/dev/null 2>&1; then
+  exec agentguard lease pre-commit "$@"
+fi
+exec "/Users/jean-patricksmith/.nvm/versions/node/v22.16.0/bin/node" "/Users/jean-patricksmith/digital/leviathan/community/agentguard/bin/agentguard.js" lease pre-commit "$@"

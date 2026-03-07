@@ -1,5 +1,5 @@
 #!/bin/bash
-# agent-lease pre-push hook via husky
-REMOTE="$1"
-URL="$2"
-npx agent-lease --hook pre-push "$REMOTE" "$URL"
+if command -v agentguard >/dev/null 2>&1; then
+  exec agentguard lease pre-push "$@"
+fi
+exec "/Users/jean-patricksmith/.nvm/versions/node/v22.16.0/bin/node" "/Users/jean-patricksmith/digital/leviathan/community/agentguard/bin/agentguard.js" lease pre-push "$@"

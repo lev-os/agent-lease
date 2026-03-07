@@ -1,2 +1,2 @@
 #!/bin/bash
-exec npx agent-lease lease pre-push "$@"
+exec npx agentguard lease pre-push "$@"

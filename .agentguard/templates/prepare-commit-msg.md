@@ -7,4 +7,4 @@ This hook enriches the commit message with validation trailers.
 {{runners}}
 
 When everything checks out:
-  npx agent-lease lease prepare-commit-msg --audit-proof='<describe what you validated>'
+  npx agentguard lease prepare-commit-msg --audit-proof='<describe what you validated>'

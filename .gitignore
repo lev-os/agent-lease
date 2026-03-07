@@ -1,5 +1,5 @@
 node_modules/
 docs/content/
-.agent-lease/locks/
-.agent-lease/audit/
-.agent-lease/proofs/
+.agentguard/locks/
+.agentguard/audit/
+.agentguard/proofs/

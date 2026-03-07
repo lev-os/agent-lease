@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Topic System Test Suite for agent-lease v4.0
+ * Topic System Test Suite for agentguard v4.0
  *
  * Tests the unified lease/topic system: cmd_lease, config chain,
  * template resolution, backward compat aliases, and topic-aware locking.
@@ -13,7 +13,7 @@ const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 const os = require('os');
 
-const AGENT_LEASE_BIN = path.join(__dirname, '..', 'bin', 'agent-lease.js');
+const AGENTGUARD_BIN = path.join(__dirname, '..', 'bin', 'agentguard.js');
 
 let testDir;
 let passed = 0;
@@ -24,7 +24,7 @@ function pass(name) { passed++; log(`  PASS ${name}`); }
 function fail(name, reason) { failed++; log(`  FAIL ${name}\n     ${reason}`); }
 
 function setup() {
-  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-lease-topic-'));
+  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentguard-topic-'));
   process.chdir(testDir);
   execSync('git init -q');
   execSync('git config user.email "test@test.com"');
@@ -60,12 +60,12 @@ function run(cmd, opts = {}) {
 }
 
 function agentLease(args, opts = {}) {
-  return run(`node ${AGENT_LEASE_BIN} ${args}`, opts);
+  return run(`node ${AGENTGUARD_BIN} ${args}`, opts);
 }
 
 function writeConfig(config) {
-  // Write to v4 config location (.agent-lease/config.json)
-  const leaseDir = path.join(testDir, '.agent-lease');
+  // Write to v4 config location (.agentguard/config.json)
+  const leaseDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(leaseDir)) fs.mkdirSync(leaseDir, { recursive: true });
   fs.writeFileSync(path.join(leaseDir, 'config.json'), JSON.stringify(config, null, 2));
 }
@@ -231,9 +231,9 @@ function test_backward_compat_push() {
 }
 
 function test_config_resolution_chain() {
-  log('\nTest: config resolution chain (CLI > config.json > pkg.json > .agent-lease.json)');
+  log('\nTest: config resolution chain (CLI > config.json > pkg.json > .agentguard.json)');
 
-  // Priority 4: .agent-lease.json (lowest)
+  // Priority 4: .agentguard.json (lowest)
   // Note: 'runners' command uses loadConfig() which delegates to loadConfigChain()
   writeConfig({
     runners: [{ name: 'from-legacy', command: 'echo legacy' }],
@@ -242,20 +242,20 @@ function test_config_resolution_chain() {
 
   let result = agentLease('runners');
   if (!result.output.includes('from-legacy')) {
-    return fail('should load from .agent-lease.json', result.output);
+    return fail('should load from .agentguard.json', result.output);
   }
 
-  // Priority 3: package.json["agent-lease"] overrides .agent-lease.json
+  // Priority 3: package.json["agentguard"] overrides .agentguard.json
   const pkg = JSON.parse(fs.readFileSync(path.join(testDir, 'package.json'), 'utf8'));
-  pkg['agent-lease'] = {
+  pkg['agentguard'] = {
     runners: [{ name: 'from-pkg', command: 'echo pkg' }],
     lockDir: 'local'
   };
   fs.writeFileSync(path.join(testDir, 'package.json'), JSON.stringify(pkg, null, 2));
   // Remove higher-priority configs so pkg.json is used
-  const legacyPath = path.join(testDir, '.agent-lease.json');
+  const legacyPath = path.join(testDir, '.agentguard.json');
   if (fs.existsSync(legacyPath)) fs.unlinkSync(legacyPath);
-  const dirConfigPath = path.join(testDir, '.agent-lease', 'config.json');
+  const dirConfigPath = path.join(testDir, '.agentguard', 'config.json');
   if (fs.existsSync(dirConfigPath)) fs.unlinkSync(dirConfigPath);
 
   result = agentLease('runners');
@@ -263,8 +263,8 @@ function test_config_resolution_chain() {
     return fail('should load from package.json', result.output);
   }
 
-  // Priority 2: .agent-lease/config.json overrides package.json
-  const leaseDir = path.join(testDir, '.agent-lease');
+  // Priority 2: .agentguard/config.json overrides package.json
+  const leaseDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(leaseDir)) fs.mkdirSync(leaseDir);
   fs.writeFileSync(path.join(leaseDir, 'config.json'), JSON.stringify({
     runners: [{ name: 'from-dir-config', command: 'echo dir-config' }],
@@ -273,7 +273,7 @@ function test_config_resolution_chain() {
 
   result = agentLease('runners');
   if (!result.output.includes('from-dir-config')) {
-    return fail('should load from .agent-lease/config.json', result.output);
+    return fail('should load from .agentguard/config.json', result.output);
   }
 
   // Priority 1: CLI --config overrides everything
@@ -303,7 +303,7 @@ function test_config_resolution_chain() {
   fs.unlinkSync(path.join(leaseDir, 'config.json'));
   fs.unlinkSync(cliConfigPath);
   // Restore clean package.json
-  delete pkg['agent-lease'];
+  delete pkg['agentguard'];
   fs.writeFileSync(path.join(testDir, 'package.json'), JSON.stringify(pkg, null, 2));
   run('git commit --no-verify -m "cleanup config-chain"');
 
@@ -322,7 +322,7 @@ function test_template_resolution() {
 
   // Test 1: Built-in default template (no custom templates)
   // Remove any existing templates
-  const leaseDir = path.join(testDir, '.agent-lease');
+  const leaseDir = path.join(testDir, '.agentguard');
   const commitTmpl = path.join(leaseDir, 'commit.md');
   const preTmpl = path.join(leaseDir, 'pre-commit.md');
   if (fs.existsSync(commitTmpl)) fs.unlinkSync(commitTmpl);
@@ -370,7 +370,7 @@ function test_template_resolution() {
 function test_env_var_expansion() {
   log('\nTest: {{env:VAR}} expansion in templates');
 
-  const leaseDir = path.join(testDir, '.agent-lease');
+  const leaseDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(leaseDir)) fs.mkdirSync(leaseDir, { recursive: true });
 
   initProject({
@@ -494,8 +494,8 @@ function test_all_known_git_hooks() {
 function test_lock_naming_includes_topic() {
   log('\nTest: lock file naming includes topic');
 
-  // Ensure .agent-lease dir exists and use local locks
-  const leaseDir = path.join(testDir, '.agent-lease');
+  // Ensure .agentguard dir exists and use local locks
+  const leaseDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(leaseDir)) fs.mkdirSync(leaseDir, { recursive: true });
 
   initProject({
@@ -507,9 +507,9 @@ function test_lock_naming_includes_topic() {
   agentLease('lease deploy-prod');
 
   // Check the locks directory for a file with the topic-derived phase
-  const locksDir = path.join(testDir, '.agent-lease', 'locks');
+  const locksDir = path.join(testDir, '.agentguard', 'locks');
   if (!fs.existsSync(locksDir)) {
-    return fail('locks dir should exist', 'missing .agent-lease/locks/');
+    return fail('locks dir should exist', 'missing .agentguard/locks/');
   }
 
   const lockFiles = fs.readdirSync(locksDir).filter(f => f.endsWith('.lock'));
@@ -595,7 +595,7 @@ function test_multiple_topics_independent() {
 function test_template_vars_topic_aware() {
   log('\nTest: template variables are topic-aware (files/diff for commit vs push)');
 
-  const leaseDir = path.join(testDir, '.agent-lease');
+  const leaseDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(leaseDir)) fs.mkdirSync(leaseDir, { recursive: true });
 
   // Use the config and runner modules directly to test interpolation
@@ -698,7 +698,7 @@ function test_template_vars_topic_aware() {
 
 function main() {
   log('==============================================================');
-  log('  agent-lease Topic System Test Suite (v4.0)');
+  log('  agentguard Topic System Test Suite (v4.0)');
   log('==============================================================');
 
   try {

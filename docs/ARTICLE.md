@@ -46,20 +46,20 @@ We can apply this to git commits:
 
 **First commit attempt:**
 - Pre-commit hook detects no validation proof
-- Creates `.agent-lease.json` lock file
+- Creates `.agentguard.json` lock file
 - **BLOCKS THE COMMIT**
-- Shows message: "Validation required. Run `npx agent-lease release` after validating."
+- Shows message: "Validation required. Run `npx agentguard release` after validating."
 
 **Developer runs validation:**
 - Runs build, lint, tests (whatever is required)
-- Runs `npx agent-lease release --audit-proof`
+- Runs `npx agentguard release --audit-proof`
 - Tool verifies validation passed
 - Stamps lock file with proof + timestamp
 
 **Second commit attempt:**
 - Pre-commit hook sees valid proof
 - Allows commit to proceed
-- Archives proof to `.agent-lease/audit-trail/`
+- Archives proof to `.agentguard/audit-trail/`
 
 This forces the step. No accidents. No bypassing. You **must** validate before the commit succeeds.
 
@@ -111,8 +111,8 @@ Present a dashboard:
 │ • Estimated local validation time: ~8 seconds   │
 │                                                  │
 │ Implementation:                                  │
-│ 1. Install agent-lease                          │
-│ 2. Configure .agent-lease.config.js             │
+│ 1. Install agentguard                          │
+│ 2. Configure .agentguard.config.js             │
 │ 3. Test with dummy commit                       │
 │                                                  │
 │ Approve? [Y/n]                                  │
@@ -123,7 +123,7 @@ Get explicit approval. Then build.
 
 ## Agentic Runners: AI Code Review on Every Commit
 
-This is where agent-lease v2 gets interesting. Instead of just running build tools, you can pipe your diff into **any LLM CLI**.
+This is where agentguard v2 gets interesting. Instead of just running build tools, you can pipe your diff into **any LLM CLI**.
 
 The contract is simple: **exit 0 = pass, exit 1 = fail, stdout = review text.**
 
@@ -219,7 +219,7 @@ I've caught real bugs with this. Null pointer dereferences. Race conditions. Off
 
 ## Implementation: The Code
 
-Here's how agent-lease works under the hood.
+Here's how agentguard works under the hood.
 
 ### Pre-commit Hook
 
@@ -227,7 +227,7 @@ Here's how agent-lease works under the hood.
 #!/bin/bash
 # .git/hooks/pre-commit
 
-LOCK_FILE=".agent-lease.json"
+LOCK_FILE=".agentguard.json"
 
 if [ -f "$LOCK_FILE" ]; then
   # Lock exists, check for proof
@@ -235,12 +235,12 @@ if [ -f "$LOCK_FILE" ]; then
 
   if [ "$PROOF" == "PASSED" ]; then
     # Validation proven, allow commit
-    mkdir -p .agent-lease/audit-trail
-    mv "$LOCK_FILE" ".agent-lease/audit-trail/$(date +%s).json"
+    mkdir -p .agentguard/audit-trail
+    mv "$LOCK_FILE" ".agentguard/audit-trail/$(date +%s).json"
     exit 0
   else
     echo "❌ Agent-lease lock exists but no audit proof found"
-    echo "Run: npx agent-lease release --audit-proof"
+    echo "Run: npx agentguard release --audit-proof"
     exit 1
   fi
 else
@@ -255,7 +255,7 @@ EOF
 
   echo "🔒 Agent-lease lock created"
   echo "Validation required before commit"
-  echo "Run: npx agent-lease release --audit-proof"
+  echo "Run: npx agentguard release --audit-proof"
   exit 1
 fi
 ```
@@ -265,16 +265,16 @@ fi
 ```javascript
 // src/cli.js
 async function release(options) {
-  const lockFile = '.agent-lease.json';
+  const lockFile = '.agentguard.json';
 
   if (!fs.existsSync(lockFile)) {
-    console.error('No agent-lease lock found');
+    console.error('No agentguard lock found');
     process.exit(1);
   }
 
   if (options.auditProof) {
     // Run validation
-    const config = loadConfig(); // reads .agent-lease.config.js
+    const config = loadConfig(); // reads .agentguard.config.js
     const results = await runValidation(config.validators);
 
     if (results.every(r => r.passed)) {
@@ -341,15 +341,15 @@ async function release(options) {
 
 **Lock directory options:**
 - `"auto"` — XDG_RUNTIME_DIR if available, else /tmp
-- `"local"` — .agent-lease/locks/ in project
-- `"xdg"` — XDG_RUNTIME_DIR/agent-lease/
+- `"local"` — .agentguard/locks/ in project
+- `"xdg"` — XDG_RUNTIME_DIR/agentguard/
 - `"/custom/path"` — Any absolute path
 
 **Environment variable overrides:**
 ```bash
-export AGENT_LEASE_LOCK_DIR=/custom/locks
-export AGENT_LEASE_PROJECT=my-project
-export AGENT_LEASE_RUNNERS="build:npm run build,lint:npm run lint"
+export AGENTGUARD_LOCK_DIR=/custom/locks
+export AGENTGUARD_PROJECT=my-project
+export AGENTGUARD_RUNNERS="build:npm run build,lint:npm run lint"
 ```
 
 ## Agent-Native Design: Built for AI-Assisted Development
@@ -362,11 +362,11 @@ This tool is designed for the future where AI agents help you code. Here's the w
 
 **You:** "Commit this"
 
-**Claude:** *attempts commit, sees agent-lease lock*
+**Claude:** *attempts commit, sees agentguard lock*
 
 **Claude:** "Agent-lease lock detected. Running validation gates..."
 
-**Claude:** *runs `npx agent-lease release --audit-proof`*
+**Claude:** *runs `npx agentguard release --audit-proof`*
 
 **Claude:** *validation passes, releases lock*
 
@@ -383,7 +383,7 @@ This is the key insight: when humans write code, we rely on discipline. When age
 Agent-lease creates an audit trail. Every commit has proof of validation:
 
 ```bash
-$ ls .agent-lease/audit-trail/
+$ ls .agentguard/audit-trail/
 1738512000.json  # Feb 2, 2026 14:00:00
 1738512430.json  # Feb 2, 2026 14:07:10
 1738513200.json  # Feb 2, 2026 14:20:00
@@ -413,32 +413,32 @@ This data feeds back into process improvement. If validation takes too long, dev
 
 Agent-lease is open source and available now:
 
-**GitHub:** github.com/yourusername/agent-lease (replace with actual link)
+**GitHub:** github.com/yourusername/agentguard (replace with actual link)
 
 **Install:**
 ```bash
-npm install --save-dev agent-lease
-npx agent-lease init
+npm install --save-dev agentguard
+npx agentguard init
 ```
 
 **Configure:**
-Edit `.agent-lease.config.js` with your validators.
+Edit `.agentguard.config.js` with your validators.
 
 **Use:**
 ```bash
 git add .
 git commit -m "Add feature"  # creates lock, blocks
-npx agent-lease release --audit-proof  # runs commit-phase runners, releases
+npx agentguard release --audit-proof  # runs commit-phase runners, releases
 git commit -m "Add feature"  # succeeds with proof
 git push  # creates lock, blocks (if push runners configured)
-npx agent-lease release --audit-proof --phase push  # runs push-phase runners
+npx agentguard release --audit-proof --phase push  # runs push-phase runners
 git push  # succeeds
 ```
 
 **With agentic runners:**
 ```bash
 # Configure Claude review
-cat > .agent-lease.json <<'EOF'
+cat > .agentguard.json <<'EOF'
 {
   "runners": [
     { "name": "build", "command": "npm run build", "on": "commit" },
@@ -450,12 +450,12 @@ EOF
 
 # Commit with AI review
 git commit -m "Add feature"  # blocked
-npx agent-lease release --audit-proof  # build + haiku review
+npx agentguard release --audit-proof  # build + haiku review
 git commit -m "Add feature"  # succeeds
 
 # Push with deep AI review
 git push  # blocked
-npx agent-lease release --audit-proof --phase push  # opus review
+npx agentguard release --audit-proof --phase push  # opus review
 git push  # succeeds
 ```
 

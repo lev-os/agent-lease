@@ -1,5 +1,5 @@
 #!/bin/bash
-# agent-lease prepare-commit-msg hook
+# agentguard prepare-commit-msg hook
 # Appends git trailers with validation proof to commit message
 
 COMMIT_MSG_FILE="$1"
@@ -13,9 +13,9 @@ fi
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
 # Load config or use defaults - check new location first, then legacy
-CONFIG_FILE="$PROJECT_ROOT/.agent-lease/config.json"
+CONFIG_FILE="$PROJECT_ROOT/.agentguard/config.json"
 if [ ! -f "$CONFIG_FILE" ]; then
-  CONFIG_FILE="$PROJECT_ROOT/.agent-lease.json"
+  CONFIG_FILE="$PROJECT_ROOT/.agentguard.json"
 fi
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -35,13 +35,13 @@ RAW_LOCK_DIR="${RAW_LOCK_DIR:-auto}"
 
 # Resolve lock dir (mirrors lib/config.js logic)
 # Priority: env > config value > XDG > /tmp
-if [ -n "$AGENT_LEASE_LOCK_DIR" ]; then
-  LOCK_DIR="$AGENT_LEASE_LOCK_DIR"
+if [ -n "$AGENTGUARD_LOCK_DIR" ]; then
+  LOCK_DIR="$AGENTGUARD_LOCK_DIR"
 elif [ "$RAW_LOCK_DIR" = "local" ]; then
-  LOCK_DIR="$PROJECT_ROOT/.agent-lease/locks"
+  LOCK_DIR="$PROJECT_ROOT/.agentguard/locks"
 elif [ "$RAW_LOCK_DIR" = "auto" ] || [ "$RAW_LOCK_DIR" = "xdg" ]; then
   if [ -n "$XDG_RUNTIME_DIR" ]; then
-    LOCK_DIR="$XDG_RUNTIME_DIR/agent-lease"
+    LOCK_DIR="$XDG_RUNTIME_DIR/agentguard"
   else
     LOCK_DIR="/tmp"
   fi
@@ -51,14 +51,14 @@ else
 fi
 
 # Override project name from env
-if [ -n "$AGENT_LEASE_PROJECT" ]; then
-  PROJECT_NAME="$AGENT_LEASE_PROJECT"
+if [ -n "$AGENTGUARD_PROJECT" ]; then
+  PROJECT_NAME="$AGENTGUARD_PROJECT"
 fi
 
 # Get current commit hash (or 'new' for first commit)
 SHORT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "new")
 # Lock uses 'commit' phase (no suffix for backward compat)
-LOCK_FILE="$LOCK_DIR/agent-lease-$PROJECT_NAME-commit-$SHORT_HASH.lock"
+LOCK_FILE="$LOCK_DIR/agentguard-$PROJECT_NAME-commit-$SHORT_HASH.lock"
 
 # Check if lock exists with audit proof and trailer info
 if [ ! -f "$LOCK_FILE" ]; then
@@ -88,19 +88,19 @@ fi
   cat "$COMMIT_MSG_FILE"
   echo ""
   if [ -n "$PROOF" ]; then
-    echo "agent-lease-proof: $PROOF"
+    echo "agentguard-proof: $PROOF"
   fi
   if [ -n "$DURATION" ]; then
-    echo "agent-lease-duration: $DURATION"
+    echo "agentguard-duration: $DURATION"
   fi
   if [ -n "$REPORT" ]; then
-    echo "agent-lease-report: $REPORT"
+    echo "agentguard-report: $REPORT"
   fi
   if [ -n "$AGENT_SUMMARY" ]; then
-    echo "agent-lease-agent-summary: $AGENT_SUMMARY"
+    echo "agentguard-agent-summary: $AGENT_SUMMARY"
   fi
   if [ -n "$LLM_FINDINGS" ]; then
-    echo "agent-lease-llm-findings: $LLM_FINDINGS"
+    echo "agentguard-llm-findings: $LLM_FINDINGS"
   fi
 } > "$COMMIT_MSG_FILE.tmp"
 

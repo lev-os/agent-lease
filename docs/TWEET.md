@@ -10,7 +10,7 @@ Push broken code → CI fails → feel dumb → fix → push again
 
 It's not a skill issue. It's a workflow gap.
 
-I built agent-lease v2 to fix this. It FORCES validation before commits using a lock/lease pattern + pluggable runners.
+I built agentguard v2 to fix this. It FORCES validation before commits using a lock/lease pattern + pluggable runners.
 
 Thread 🧵
 
@@ -71,13 +71,13 @@ Pipe full context to any LLM CLI.
 
 Lock storage:
 • `"auto"` → XDG_RUNTIME_DIR or /tmp
-• `"local"` → .agent-lease/locks/
-• `"xdg"` → XDG_RUNTIME_DIR/agent-lease/
+• `"local"` → .agentguard/locks/
+• `"xdg"` → XDG_RUNTIME_DIR/agentguard/
 
 Env overrides:
-• AGENT_LEASE_LOCK_DIR
-• AGENT_LEASE_PROJECT
-• AGENT_LEASE_RUNNERS
+• AGENTGUARD_LOCK_DIR
+• AGENTGUARD_PROJECT
+• AGENTGUARD_RUNNERS
 
 Zero-config or full control.
 
@@ -113,8 +113,8 @@ Real git repos, real hooks, real edge cases.
 
 Available now:
 
-📦 `npm install -g agent-lease`
-⚙️ `npx agent-lease init`
+📦 `npm install -g agentguard`
+⚙️ `npx agentguard init`
 🔒 Commit → blocked until validated
 🤖 Pipe diff to any LLM
 
@@ -126,7 +126,7 @@ Built this because I kept shipping broken code and got tired of it.
 
 **Tweet 9: The Meta**
 
-Built with Claude using team mode + agent-lease v2.
+Built with Claude using team mode + agentguard v2.
 
 The agent that helped me build it now:
 • Forces itself to validate before committing

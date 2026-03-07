@@ -1,10 +1,10 @@
 {
-  "name": "agent-lease",
+  "name": "agentguard",
   "version": "0.1.2",
   "description": "Git hooks that FORCE validation before commits via lock/lease pattern. No broken code reaches CI.",
   "main": "lib/lock-manager.js",
   "bin": {
-    "agent-lease": "./bin/agent-lease.js"
+    "agentguard": "./bin/agentguard.js"
   },
   "scripts": {
     "test": "node test/e2e.js && node test/stress.js && node test/topic.js",
@@ -26,9 +26,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chidev/agent-lease.git"
+    "url": "https://github.com/chidev/agentguard.git"
   },
-  "homepage": "https://github.com/chidev/agent-lease",
+  "homepage": "https://github.com/chidev/agentguard",
   "funding": "https://kinglystudio.ai",
   "files": [
     "bin/",

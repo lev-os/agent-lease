@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Stress Test Suite for agent-lease
+ * Stress Test Suite for agentguard
  *
  * Tests edge cases, race conditions, and real-world scenarios.
  *
@@ -12,7 +12,7 @@ const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 const os = require('os');
 
-const AGENT_LEASE_BIN = path.join(__dirname, '..', 'bin', 'agent-lease.js');
+const AGENTGUARD_BIN = path.join(__dirname, '..', 'bin', 'agentguard.js');
 
 let testDir;
 let passed = 0;
@@ -23,7 +23,7 @@ function pass(name) { passed++; log(`  ✅ ${name}`); }
 function fail(name, reason) { failed++; log(`  ❌ ${name}\n     ${reason}`); }
 
 function setup() {
-  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-lease-stress-'));
+  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentguard-stress-'));
   process.chdir(testDir);
   execSync('git init -q');
   execSync('git config user.email "test@test.com"');
@@ -61,13 +61,13 @@ function run(cmd, opts = {}) {
 }
 
 function agentLease(args, opts = {}) {
-  return run(`node ${AGENT_LEASE_BIN} ${args}`, opts);
+  return run(`node ${AGENTGUARD_BIN} ${args}`, opts);
 }
 
 // Helper: write config to both legacy and v4 locations for consistency
 function writeTestConfig(config) {
-  fs.writeFileSync(path.join(testDir, '.agent-lease.json'), JSON.stringify(config));
-  const v4ConfigDir = path.join(testDir, '.agent-lease');
+  fs.writeFileSync(path.join(testDir, '.agentguard.json'), JSON.stringify(config));
+  const v4ConfigDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(v4ConfigDir)) {
     fs.mkdirSync(v4ConfigDir, { recursive: true });
   }
@@ -290,14 +290,14 @@ function test_nested_git_repo() {
     scripts: { build: 'echo nested-ok' }
   }));
 
-  // Init agent-lease in nested
-  const initResult = spawnSync('node', [AGENT_LEASE_BIN, 'init'], { cwd: nestedDir, encoding: 'utf8' });
+  // Init agentguard in nested
+  const initResult = spawnSync('node', [AGENTGUARD_BIN, 'init'], { cwd: nestedDir, encoding: 'utf8' });
   if (initResult.status !== 0) {
     return fail('should init in nested repo', initResult.stdout + initResult.stderr);
   }
 
   // Verify it uses nested project name
-  const statusResult = spawnSync('node', [AGENT_LEASE_BIN, 'status'], { cwd: nestedDir, encoding: 'utf8' });
+  const statusResult = spawnSync('node', [AGENTGUARD_BIN, 'status'], { cwd: nestedDir, encoding: 'utf8' });
   if (!statusResult.stdout.includes('nested-project')) {
     return fail('should use nested project name', statusResult.stdout);
   }
@@ -445,7 +445,7 @@ function test_runner_with_exit_code_validation() {
 
 function main() {
   log('╔══════════════════════════════════════════════════════════════╗');
-  log('║  agent-lease Stress Test Suite                               ║');
+  log('║  agentguard Stress Test Suite                               ║');
   log('╚══════════════════════════════════════════════════════════════╝');
 
   try {

@@ -8,7 +8,7 @@
 
 ## Core Insight
 
-agent-lease is an **agent-first** tool. The AI agent is the one doing `git commit` and `git push`. The human is an observer who reviews the audit trail after the fact. Current code, docs, and templates are written as if a human developer is the primary actor.
+agentguard is an **agent-first** tool. The AI agent is the one doing `git commit` and `git push`. The human is an observer who reviews the audit trail after the fact. Current code, docs, and templates are written as if a human developer is the primary actor.
 
 ## Corrected Mental Model
 
@@ -28,8 +28,8 @@ Core mechanics are sound. Scattered human-centric language needs cleanup.
 
 | File | Line/Area | Issue | Fix |
 |------|-----------|-------|-----|
-| `bin/agent-lease.js` | Output messages | "You can commit freely" | "Gate cleared, commit may proceed" |
-| `bin/agent-lease.js` | Help text | Addresses "you" (human) | Address the agent workflow |
+| `bin/agentguard.js` | Output messages | "You can commit freely" | "Gate cleared, commit may proceed" |
+| `bin/agentguard.js` | Help text | Addresses "you" (human) | Address the agent workflow |
 | `lib/config.js` | `bypassWarning` var | Implies human override | Rename to `enforceValidation` or remove |
 | `lib/config.js` | `DEFAULT_COMMIT_TEMPLATE` | "Did you update docs?" (human checklist) | Rephrase as agent decision criteria |
 | `lib/config.js` | `DEFAULT_PUSH_TEMPLATE` | Same human checklist framing | Same fix |
@@ -46,7 +46,7 @@ Core mechanics are sound. Scattered human-centric language needs cleanup.
 | **"Why Lock/Lease?"** | "You must explicitly run validation" | "Agent must produce validation proof" |
 | **Husky section** | `exec < /dev/tty` (interactive TTY) | Remove — agents don't have TTY |
 | **CLI Reference** | Uses old `release --audit-proof` commands | Update to v4 `lease <topic>` syntax |
-| **Config section** | Still shows old `.agent-lease.json` format | Add v4 topics format alongside |
+| **Config section** | Still shows old `.agentguard.json` format | Add v4 topics format alongside |
 | **Template Variables** | Missing `{{topic}}`, `{{args}}`, `{{env:VAR}}` | Add to table |
 | **Test badge** | "31 passing" | Update to "43 passing" |
 | **Missing** | No "Agent-First Design" lead section | Add before "The Cycle" |
@@ -62,7 +62,7 @@ Core mechanics are sound. Scattered human-centric language needs cleanup.
 | `docs/content/ARTICLE.md` | Duplicate of above | Same changes |
 | `docs/GUIDE.md` | Uses "You:" and "Developer:" labels | Lead with "Agent:" interactions |
 | `docs/content/CLAUDE_GUIDE.md` | Already agent-focused | Minor: update to v4 `lease` commands |
-| `skills/agent-lease/SKILL.md` | Strong agent protocol | No changes needed |
+| `skills/agentguard/SKILL.md` | Strong agent protocol | No changes needed |
 
 ### 4. Templates (Confidence: 0.15) — Complete Rethink Needed
 
@@ -97,7 +97,7 @@ Run each configured runner. All must exit 0.
 ## Proof Submission
 After running all validators, submit proof:
 
-  npx agent-lease lease pre-commit --audit-proof='
+  npx agentguard lease pre-commit --audit-proof='
   Runner: <name>
   Status: PASS | FAIL
   Output: <summary>
@@ -135,4 +135,4 @@ These are messaging/docs changes, not breaking API changes. Appropriate for **0.
 
 ## Summary
 
-The tool works correctly. The framing is wrong. agent-lease isn't a tool that blocks developers — it's a protocol that forces agents to prove their work before it propagates. Fix the messaging, fix the templates, and the tool matches its purpose.
+The tool works correctly. The framing is wrong. agentguard isn't a tool that blocks developers — it's a protocol that forces agents to prove their work before it propagates. Fix the messaging, fix the templates, and the tool matches its purpose.

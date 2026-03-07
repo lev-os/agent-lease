@@ -1,6 +1,6 @@
-# Contributing to agent-lease
+# Contributing to agentguard
 
-Thanks for your interest in contributing to agent-lease! This project is part of the [lev-os](https://github.com/lev-os) ecosystem, sponsored by [kinglystudio.ai](https://kinglystudio.ai).
+Thanks for your interest in contributing to agentguard! This project is part of the [lev-os](https://github.com/lev-os) ecosystem, sponsored by [kinglystudio.ai](https://kinglystudio.ai).
 
 ---
 
@@ -8,14 +8,14 @@ Thanks for your interest in contributing to agent-lease! This project is part of
 
 ```bash
 # Clone the repo
-git clone https://github.com/chidev/agent-lease.git
-cd agent-lease
+git clone https://github.com/chidev/agentguard.git
+cd agentguard
 
 # Link globally for local development
 npm link
 
 # Verify it works
-agent-lease --help
+agentguard --help
 ```
 
 ---
@@ -47,7 +47,7 @@ Runners follow a simple contract:
 ### Steps
 
 1. Create your runner script or CLI command
-2. Add it to `.agent-lease.json` in the `runners` array:
+2. Add it to `.agentguard.json` in the `runners` array:
 
 ```json
 {
@@ -57,7 +57,7 @@ Runners follow a simple contract:
 }
 ```
 
-3. Test it: `npx agent-lease release --audit-proof`
+3. Test it: `npx agentguard release --audit-proof`
 4. If contributing a built-in runner, add tests in `test/`
 
 ### Available Template Variables
@@ -75,7 +75,7 @@ Runners follow a simple contract:
 ## Project Structure
 
 ```
-agent-lease/
+agentguard/
   bin/           # CLI entry point
   hooks/         # Git hook scripts (pre-commit, pre-push)
   lib/           # Core logic (lock-manager, runner execution)
@@ -118,11 +118,11 @@ agent-lease/
 
 ## Reporting Issues
 
-File issues at [github.com/chidev/agent-lease/issues](https://github.com/chidev/agent-lease/issues).
+File issues at [github.com/chidev/agentguard/issues](https://github.com/chidev/agentguard/issues).
 
 Include:
 - OS and Node.js version
-- agent-lease version (`agent-lease --version`)
+- agentguard version (`agentguard --version`)
 - Steps to reproduce
 - Expected vs actual behavior
 

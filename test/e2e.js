@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * E2E Test Suite for agent-lease
+ * E2E Test Suite for agentguard
  *
  * Tests the full lock/lease/runner cycle in an isolated git repo.
  *
@@ -12,7 +12,7 @@ const path = require('path');
 const { execSync, spawnSync } = require('child_process');
 const os = require('os');
 
-const AGENT_LEASE_BIN = path.join(__dirname, '..', 'bin', 'agent-lease.js');
+const AGENTGUARD_BIN = path.join(__dirname, '..', 'bin', 'agentguard.js');
 
 // Test utilities
 let testDir;
@@ -35,7 +35,7 @@ function fail(name, reason) {
 }
 
 function setup() {
-  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-lease-test-'));
+  testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentguard-test-'));
   process.chdir(testDir);
   execSync('git init -q');
   execSync('git config user.email "test@test.com"');
@@ -55,7 +55,7 @@ function setup() {
   try {
     const tmpFiles = fs.readdirSync(os.tmpdir());
     for (const f of tmpFiles) {
-      if (f.startsWith('agent-lease-test-project-') && f.endsWith('.lock')) {
+      if (f.startsWith('agentguard-test-project-') && f.endsWith('.lock')) {
         fs.unlinkSync(path.join(os.tmpdir(), f));
       }
     }
@@ -72,10 +72,10 @@ function cleanup() {
 // Helper: write config to both legacy and v4 locations for consistency
 function writeTestConfig(config) {
   // Write legacy config
-  fs.writeFileSync(path.join(testDir, '.agent-lease.json'), JSON.stringify(config));
+  fs.writeFileSync(path.join(testDir, '.agentguard.json'), JSON.stringify(config));
 
   // Also write v4 config (higher priority) to match
-  const v4ConfigDir = path.join(testDir, '.agent-lease');
+  const v4ConfigDir = path.join(testDir, '.agentguard');
   if (!fs.existsSync(v4ConfigDir)) {
     fs.mkdirSync(v4ConfigDir, { recursive: true });
   }
@@ -112,7 +112,7 @@ function run(cmd, opts = {}) {
 }
 
 function agentLease(args, opts = {}) {
-  return run(`node ${AGENT_LEASE_BIN} ${args}`, opts);
+  return run(`node ${AGENTGUARD_BIN} ${args}`, opts);
 }
 
 // ============ TESTS ============
@@ -126,15 +126,15 @@ function test_init() {
     return fail('init should succeed', result.output);
   }
 
-  if (!fs.existsSync(path.join(testDir, '.agent-lease.json'))) {
-    return fail('should create config', 'missing .agent-lease.json');
+  if (!fs.existsSync(path.join(testDir, '.agentguard.json'))) {
+    return fail('should create config', 'missing .agentguard.json');
   }
 
   if (!fs.existsSync(path.join(testDir, '.git', 'hooks', 'pre-commit'))) {
     return fail('should install hook', 'missing pre-commit hook');
   }
 
-  if (!result.output.includes('agent-lease installed')) {
+  if (!result.output.includes('agentguard installed')) {
     return fail('should show success message', result.output);
   }
 
@@ -270,7 +270,7 @@ function test_local_lock_dir() {
 
   const status = agentLease('status');
 
-  if (!status.output.includes('.agent-lease/locks')) {
+  if (!status.output.includes('.agentguard/locks')) {
     return fail('should use local lock dir', status.output);
   }
 
@@ -303,7 +303,7 @@ function test_env_override() {
 
   // Use env var to override runner
   const result = agentLease('release --audit-proof', {
-    env: { AGENT_LEASE_RUNNERS: 'custom:echo custom-runner-ok' }
+    env: { AGENTGUARD_RUNNERS: 'custom:echo custom-runner-ok' }
   });
 
   if (result.status !== 0) {
@@ -612,7 +612,7 @@ function test_proof_fail_status_rejected() {
 }
 
 function test_agent_summary_trailer() {
-  log('\n🧪 Test: agent-lease-agent-summary trailer appears');
+  log('\n🧪 Test: agentguard-agent-summary trailer appears');
 
   const config = {
     runners: [
@@ -640,7 +640,7 @@ function test_agent_summary_trailer() {
   // Check git log for trailer
   const logResult = run("git log --format='%(trailers)' -1");
 
-  if (!logResult.output.includes('agent-lease-agent-summary')) {
+  if (!logResult.output.includes('agentguard-agent-summary')) {
     return fail('should include agent-summary trailer', logResult.output);
   }
 
@@ -648,7 +648,7 @@ function test_agent_summary_trailer() {
     return fail('trailer should contain summary text', logResult.output);
   }
 
-  pass('agent-lease-agent-summary trailer appears in commit');
+  pass('agentguard-agent-summary trailer appears in commit');
 }
 
 function test_llm_output_parsing() {
@@ -705,7 +705,7 @@ Some epilogue`;
 function test_parse_agent_proof() {
   log('\n🧪 Test: parseAgentProof function');
 
-  // Direct implementation test (since requiring bin/agent-lease.js runs main)
+  // Direct implementation test (since requiring bin/agentguard.js runs main)
   function parseAgentProof(text) {
     const clean = text.replace(/^['"]|['"]$/g, '');
     const sections = [];
@@ -768,7 +768,7 @@ Summary: All validations passed. Safe to commit.`;
 
 function main() {
   log('╔══════════════════════════════════════════════════════════════╗');
-  log('║  agent-lease E2E Test Suite                                  ║');
+  log('║  agentguard E2E Test Suite                                  ║');
   log('╚══════════════════════════════════════════════════════════════╝');
 
   try {

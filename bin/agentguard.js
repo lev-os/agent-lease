@@ -14,7 +14,7 @@ const {
 const { getGitContext, runRunners, formatResults } = require('../lib/runner');
 
 const HELP = `
-agent-lease - Forced validation gates for git hooks and custom topics
+agentguard - Forced validation gates for git hooks and custom topics
 
 COMMANDS:
   init                      Install hooks to current project
@@ -39,15 +39,15 @@ OPTIONS:
   --report-stdin            Read report data from stdin
 
 ENV VARS:
-  AGENT_LEASE_LOCK_DIR      Override lock directory
-  AGENT_LEASE_PROJECT       Override project name
-  AGENT_LEASE_RUNNERS       Override runners (name:cmd,name:cmd)
+  AGENTGUARD_LOCK_DIR      Override lock directory
+  AGENTGUARD_PROJECT       Override project name
+  AGENTGUARD_RUNNERS       Override runners (name:cmd,name:cmd)
 
 CONFIG RESOLUTION (priority):
   1. --config CLI flag
-  2. .agent-lease/config.json
-  3. package.json["agent-lease"]
-  4. .agent-lease.json (legacy)
+  2. .agentguard/config.json
+  3. package.json["agentguard"]
+  4. .agentguard.json (legacy)
 
 RUNNER CONFIG:
   {
@@ -66,10 +66,10 @@ RUNNER CONFIG:
   }
 
 LOCK DIRS (priority):
-  1. AGENT_LEASE_LOCK_DIR env var
+  1. AGENTGUARD_LOCK_DIR env var
   2. --lock-dir CLI flag
-  3. "local" → .agent-lease/locks/ (project-local)
-  4. "xdg"   → $XDG_RUNTIME_DIR/agent-lease/
+  3. "local" → .agentguard/locks/ (project-local)
+  4. "xdg"   → $XDG_RUNTIME_DIR/agentguard/
   5. "auto"  → XDG if available, else /tmp
 
 TEMPLATE VARS:
@@ -84,20 +84,31 @@ TEMPLATE VARS:
 
 EXAMPLES:
   # Traditional validation
-  agent-lease commit                     # Block commit, show gate
-  agent-lease commit --audit-proof='...' # Release with proof
+  agentguard commit                     # Block commit, show gate
+  agentguard commit --audit-proof='...' # Release with proof
 
   # Unified lease command (v4.0)
-  agent-lease lease pre-commit           # Same as 'commit'
-  agent-lease lease pre-push             # Same as 'push'
-  agent-lease lease custom-check arg1    # Custom topic with args
+  agentguard lease pre-commit           # Same as 'commit'
+  agentguard lease pre-push             # Same as 'push'
+  agentguard lease custom-check arg1    # Custom topic with args
 
   # Check status by topic
-  agent-lease status --topic pre-commit
+  agentguard status --topic pre-commit
 
 FOR AI AGENTS:
   Agents read the blocked output and run the release command automatically.
 `;
+
+function createWrapperScript(args) {
+  const escapedArgs = args.join(' ');
+  const fallback = `${JSON.stringify(process.execPath)} ${JSON.stringify(__filename)} ${escapedArgs} "$@"`;
+  return `#!/bin/bash
+if command -v agentguard >/dev/null 2>&1; then
+  exec agentguard ${escapedArgs} "$@"
+fi
+exec ${fallback}
+`;
+}
 
 function cmd_init() {
   const root = findProjectRoot();
@@ -119,10 +130,10 @@ function cmd_init() {
     console.log('  Detected husky - installing wrapper hooks');
 
     const huskyHooks = {
-      'pre-commit': '#!/bin/bash\nexec npx agent-lease lease pre-commit "$@"\n',
-      'pre-push': '#!/bin/bash\nexec npx agent-lease lease pre-push "$@"\n',
+      'pre-commit': createWrapperScript(['lease', 'pre-commit']),
+      'pre-push': createWrapperScript(['lease', 'pre-push']),
       // prepare-commit-msg is NOT a gate - it extracts trailers from the lock file
-      'prepare-commit-msg': '#!/bin/bash\nexec npx agent-lease --hook prepare-commit-msg "$@"\n'
+      'prepare-commit-msg': createWrapperScript(['--hook', 'prepare-commit-msg'])
     };
 
     for (const [hook, content] of Object.entries(huskyHooks)) {
@@ -132,44 +143,48 @@ function cmd_init() {
       console.log(`  + Installed .husky/${hook}`);
     }
   } else {
-    // Direct mode: copy hooks to .git/hooks/
+    // Direct mode: write wrappers for gate hooks and copy the commit-msg trailer hook.
     const hooksDir = path.join(gitDir, 'hooks');
     if (!fs.existsSync(hooksDir)) {
       fs.mkdirSync(hooksDir, { recursive: true });
     }
 
     for (const hook of ['pre-commit', 'pre-push', 'prepare-commit-msg']) {
-      const src = path.join(sourceHooksDir, hook);
       const dest = path.join(hooksDir, hook);
 
-      if (!fs.existsSync(src)) {
-        console.error(`Warning: ${hook} hook not found at ${src}`);
-        continue;
-      }
-
       if (fs.existsSync(dest)) {
-        const backup = `${dest}.agent-lease-backup`;
+        const backup = `${dest}.agentguard-backup`;
         fs.copyFileSync(dest, backup);
-        console.log(`  Backed up existing ${hook} -> ${hook}.agent-lease-backup`);
+        console.log(`  Backed up existing ${hook} -> ${hook}.agentguard-backup`);
       }
 
-      fs.copyFileSync(src, dest);
+      if (hook === 'prepare-commit-msg') {
+        const src = path.join(sourceHooksDir, hook);
+        if (!fs.existsSync(src)) {
+          console.error(`Warning: ${hook} hook not found at ${src}`);
+          continue;
+        }
+        fs.copyFileSync(src, dest);
+      } else {
+        const args = hook === 'pre-commit' ? ['lease', 'pre-commit'] : ['lease', 'pre-push'];
+        fs.writeFileSync(dest, createWrapperScript(args));
+      }
       fs.chmodSync(dest, '755');
       console.log(`  + Installed ${hook}`);
     }
   }
 
-  // Create .agent-lease directory structure
-  const leaseDir = path.join(root, '.agent-lease');
+  // Create .agentguard directory structure
+  const leaseDir = path.join(root, '.agentguard');
   if (!fs.existsSync(leaseDir)) {
     fs.mkdirSync(leaseDir, { recursive: true });
   }
 
-  // Create .agent-lease/config.json (v4 config location)
-  // If legacy .agent-lease.json exists, migrate its runners; otherwise use defaults
+  // Create .agentguard/config.json (v4 config location)
+  // If legacy .agentguard.json exists, migrate its runners; otherwise use defaults
   const newConfigPath = path.join(leaseDir, 'config.json');
   if (!fs.existsSync(newConfigPath)) {
-    const legacyPath = path.join(root, '.agent-lease.json');
+    const legacyPath = path.join(root, '.agentguard.json');
     let preCommitRunners = [
       { name: 'build', command: 'npm run build' },
       { name: 'lint', command: 'npm run lint' }
@@ -206,14 +221,14 @@ function cmd_init() {
       },
       defaults: {
         lockDir,
-        templateDir: '.agent-lease/templates'
+        templateDir: '.agentguard/templates'
       }
     };
     fs.writeFileSync(newConfigPath, JSON.stringify(defaultTopicConfig, null, 2) + '\n');
-    console.log('  + Created .agent-lease/config.json');
+    console.log('  + Created .agentguard/config.json');
   }
 
-  // Create .agent-lease/templates/ directory with default templates
+  // Create .agentguard/templates/ directory with default templates
   const templatesDir = path.join(leaseDir, 'templates');
   if (!fs.existsSync(templatesDir)) {
     fs.mkdirSync(templatesDir, { recursive: true });
@@ -234,7 +249,7 @@ Topic: {{topic}}
 {{runners}}
 
 When everything checks out:
-  npx agent-lease lease {{topic}} --audit-proof='<describe what you validated>'
+  npx agentguard lease {{topic}} --audit-proof='<describe what you validated>'
 `
   };
 
@@ -242,20 +257,20 @@ When everything checks out:
     const templatePath = path.join(templatesDir, filename);
     if (!fs.existsSync(templatePath)) {
       fs.writeFileSync(templatePath, content);
-      console.log(`  + Created .agent-lease/templates/${filename}`);
+      console.log(`  + Created .agentguard/templates/${filename}`);
     }
   }
 
-  // Legacy: also create .agent-lease.json if it doesn't exist (backward compat)
-  const legacyConfigPath = path.join(root, '.agent-lease.json');
+  // Legacy: also create .agentguard.json if it doesn't exist (backward compat)
+  const legacyConfigPath = path.join(root, '.agentguard.json');
   if (!fs.existsSync(legacyConfigPath)) {
     createDefaultConfig(root);
-    console.log('  + Created .agent-lease.json (legacy compat)');
+    console.log('  + Created .agentguard.json (legacy compat)');
   }
 
-  // Add .agent-lease/locks, audit, and proofs to .gitignore
+  // Add .agentguard/locks, audit, and proofs to .gitignore
   const gitignorePath = path.join(root, '.gitignore');
-  const ignoreEntries = ['.agent-lease/locks/', '.agent-lease/audit/', '.agent-lease/proofs/'];
+  const ignoreEntries = ['.agentguard/locks/', '.agentguard/audit/', '.agentguard/proofs/'];
   if (fs.existsSync(gitignorePath)) {
     let content = fs.readFileSync(gitignorePath, 'utf8');
     for (const entry of ignoreEntries) {
@@ -269,10 +284,10 @@ When everything checks out:
   const { config } = loadConfig(root);
   const mode = hasHusky ? 'husky' : 'direct';
   console.log('');
-  console.log('agent-lease installed');
+  console.log('agentguard installed');
   console.log(`  Mode:      ${mode}`);
-  console.log(`  Config:    .agent-lease/config.json`);
-  console.log(`  Templates: .agent-lease/templates/`);
+  console.log(`  Config:    .agentguard/config.json`);
+  console.log(`  Templates: .agentguard/templates/`);
   console.log(`  Lock dir:  ${config.lockDir}`);
   console.log(`  Runners:   ${config._runners.length} configured`);
   console.log('');
@@ -351,9 +366,9 @@ function parseCliFlags(args) {
  * Topics can be git hooks (pre-commit, pre-push) or custom validation gates.
  *
  * Two modes:
- *   DENY mode:  `agent-lease lease <topic>` (no --audit-proof)
+ *   DENY mode:  `agentguard lease <topic>` (no --audit-proof)
  *               → Load template, print gate with forbidden header, create lock, exit 1
- *   RELEASE mode: `agent-lease lease <topic> --audit-proof='<proof>'`
+ *   RELEASE mode: `agentguard lease <topic> --audit-proof='<proof>'`
  *               → Validate proof, release lock, exit 0
  *
  * @param {string} topic - Topic name (e.g., 'pre-commit', 'pre-push', 'custom-check')
@@ -370,7 +385,7 @@ function cmd_lease(topic, args) {
   const lockDir = flags['lock-dir'] || config.lockDir;
 
   // Resolve template directory
-  const templateDir = flags['template-dir'] || path.join(projectRoot, '.agent-lease');
+  const templateDir = flags['template-dir'] || path.join(projectRoot, '.agentguard');
 
   // Map topic to phase for lock compatibility
   const phase = topic === 'pre-commit' ? 'commit' :
@@ -483,12 +498,12 @@ function cmd_lease(topic, args) {
 
 /**
  * Unified phase handler for commit/push gates.
- * Called directly by simplified hooks: `npx agent-lease commit` or `npx agent-lease push`
+ * Called directly by simplified hooks: `npx agentguard commit` or `npx agentguard push`
  *
  * Two modes:
- *   DENY mode:  `agent-lease commit` (no --audit-proof, or --audit-proof with no value)
+ *   DENY mode:  `agentguard commit` (no --audit-proof, or --audit-proof with no value)
  *               → Load template, print gate message, create lock, exit 1
- *   RELEASE mode: `agent-lease commit --audit-proof='<proof>'`
+ *   RELEASE mode: `agentguard commit --audit-proof='<proof>'`
  *               → Validate proof, release lock, exit 0
  *
  * @param {string} phase - 'commit' or 'push'
@@ -618,8 +633,8 @@ function cmd_release(args) {
 
   if (!proofArg) {
     console.error('Error: Must pass --audit-proof to confirm intentional release');
-    console.error('Usage: agent-lease release --audit-proof [--phase commit|push] [--report <json>] [--report-stdin]');
-    console.error('   or: agent-lease release --audit-proof=\'<proof text>\' [--phase commit|push]');
+    console.error('Usage: agentguard release --audit-proof [--phase commit|push] [--report <json>] [--report-stdin]');
+    console.error('   or: agentguard release --audit-proof=\'<proof text>\' [--phase commit|push]');
     process.exit(1);
   }
 
@@ -798,7 +813,7 @@ function cmd_status(args) {
         console.log(`     Created: ${lockState.data.CREATED}`);
       }
       console.log('');
-      console.log(`     Release: npx agent-lease lease ${topic} --audit-proof='...'`);
+      console.log(`     Release: npx agentguard lease ${topic} --audit-proof='...'`);
     }
     console.log('');
     return;
@@ -827,7 +842,7 @@ function cmd_status(args) {
         console.log(`     Remote: ${lockState.data.REMOTE}`);
       }
       console.log('');
-      console.log(`     Release: npx agent-lease lease ${topicName} --audit-proof='...'`);
+      console.log(`     Release: npx agentguard lease ${topicName} --audit-proof='...'`);
     }
     console.log('');
   }
@@ -881,7 +896,7 @@ function cmd_clear(args) {
 
 /**
  * Internal hook executor for husky integration.
- * Called via: npx agent-lease --hook <hook-name> [args...]
+ * Called via: npx agentguard --hook <hook-name> [args...]
  * This runs the bash hook scripts directly from hooks/ directory.
  */
 function cmd_hook(hookName, hookArgs) {
@@ -917,10 +932,10 @@ if (command === '--hook') {
       cmd_init();
       break;
     case 'lease':
-      // v4.0 unified command: agent-lease lease <topic> [args...]
+      // v4.0 unified command: agentguard lease <topic> [args...]
       const topic = args[0];
       if (!topic) {
-        console.error('Error: lease requires a topic. Usage: agent-lease lease <topic> [args...]');
+        console.error('Error: lease requires a topic. Usage: agentguard lease <topic> [args...]');
         process.exit(1);
       }
       cmd_lease(topic, args.slice(1));

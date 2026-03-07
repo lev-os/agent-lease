@@ -1,5 +1,5 @@
 #!/bin/bash
-# agent-lease prepare-commit-msg hook via husky
-COMMIT_MSG_FILE="$1"
-COMMIT_SOURCE="$2"
-npx agent-lease --hook prepare-commit-msg "$COMMIT_MSG_FILE" "$COMMIT_SOURCE"
+if command -v agentguard >/dev/null 2>&1; then
+  exec agentguard --hook prepare-commit-msg "$@"
+fi
+exec "/Users/jean-patricksmith/.nvm/versions/node/v22.16.0/bin/node" "/Users/jean-patricksmith/digital/leviathan/community/agentguard/bin/agentguard.js" --hook prepare-commit-msg "$@"

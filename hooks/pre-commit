@@ -1,2 +1,2 @@
 #!/bin/bash
-exec npx agent-lease lease pre-commit "$@"
+exec npx agentguard lease pre-commit "$@"

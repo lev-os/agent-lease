@@ -1,5 +1,5 @@
-[![npm version](https://img.shields.io/npm/v/agent-lease.svg)](https://www.npmjs.com/package/agent-lease)
-[![tests](https://img.shields.io/badge/tests-31%20passing-brightgreen.svg)](https://github.com/chidev/agent-lease)
+[![npm version](https://img.shields.io/npm/v/agentguard.svg)](https://www.npmjs.com/package/agentguard)
+[![tests](https://img.shields.io/badge/tests-31%20passing-brightgreen.svg)](https://github.com/chidev/agentguard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![sponsor](https://img.shields.io/badge/sponsor-kinglystudio.ai-purple.svg)](https://kinglystudio.ai)
 
@@ -52,13 +52,13 @@ Borrowed from distributed systems:
 
 ### Agent runs validation:
 
-1. Runs `npx agent-lease release --audit-proof`
+1. Runs `npx agentguard release --audit-proof`
 2. Stamps lock file with proof + timestamp
 
 ### Second commit attempt:
 
 1. Hook sees valid proof → allows commit
-2. Archives proof to `.agent-lease/proofs/`
+2. Archives proof to `.agentguard/proofs/`
 
 **No accidents. No bypassing.**
 
@@ -66,7 +66,7 @@ Borrowed from distributed systems:
 flowchart TD
     A["$ git commit"] --> B["🔒 LOCK CREATED"]
     B --> C["❌ BLOCKED"]
-    C --> D["$ npx agent-lease release --audit-proof"]
+    C --> D["$ npx agentguard release --audit-proof"]
     D --> E["⚡ RUNNERS EXECUTE"]
     E --> F{All pass?}
     F -->|Yes| G["✅ Proof stamped"]
@@ -121,7 +121,7 @@ The real benefit is that you're not just prompting "follow these standards" over
 You: "Add auth to the user service"
 Claude: *makes changes*
 You: "Commit this"
-Claude: *sees agent-lease lock*
+Claude: *sees agentguard lock*
 Claude: *runs validation, releases lock*
 Claude: "Committed with validation proof. Build and ESLint passed."
 ```
@@ -136,7 +136,7 @@ Agents can now submit their own validation proof:
 
 ```bash
 # Agent runs validators, then submits proof
-npx agent-lease release --audit-proof='## Validation Report
+npx agentguard release --audit-proof='## Validation Report
 Runner: test
 Status: PASS
 Output: 23 tests passed in 4.2s
@@ -162,7 +162,7 @@ CONFIGURED RUNNERS:
   haiku-review  claude -p '...'                       [commit]
 
 CALLBACK FORMAT:
-  npx agent-lease release --audit-proof='<YOUR PROOF>'
+  npx agentguard release --audit-proof='<YOUR PROOF>'
 
 PROOF TEMPLATE:
   ## Validation Report
@@ -182,19 +182,19 @@ For structured LLM output, use steering markers:
 ```json
 {
   "name": "haiku-review",
-  "command": "claude -p 'Review diff. Respond ONLY:\n<AGENT_LEASE_START>\nVERDICT: PASS | FAIL\nCRITICAL: 0\nFINDINGS:\n- <issue>\nSUMMARY: <one line>\n<AGENT_LEASE_END>\n\nDiff:\n{{diff}}'",
+  "command": "claude -p 'Review diff. Respond ONLY:\n<AGENTGUARD_START>\nVERDICT: PASS | FAIL\nCRITICAL: 0\nFINDINGS:\n- <issue>\nSUMMARY: <one line>\n<AGENTGUARD_END>\n\nDiff:\n{{diff}}'",
   "on": "commit",
   "llm": true
 }
 ```
 
-agent-lease parses the structured output and determines pass/fail from the VERDICT.
+agentguard parses the structured output and determines pass/fail from the VERDICT.
 
 ---
 
 ## Observability
 
-Every commit has proof of validation in `.agent-lease/proofs/`:
+Every commit has proof of validation in `.agentguard/proofs/`:
 
 ```json
 {
@@ -216,10 +216,10 @@ commit a1b2c3d
 
     Add authentication module
 
-    agent-lease-proof: test:PASS haiku-review:PASS
-    agent-lease-agent-summary: All validations passed. Safe to commit.
-    agent-lease-llm-findings: Minor: consider null check on line 42
-    agent-lease-report: commit-a1b2c3d.json
+    agentguard-proof: test:PASS haiku-review:PASS
+    agentguard-agent-summary: All validations passed. Safe to commit.
+    agentguard-llm-findings: Minor: consider null check on line 42
+    agentguard-report: commit-a1b2c3d.json
 ```
 
 **Measure it. Optimize it.** If validation takes too long, devs will bypass it.
@@ -230,16 +230,16 @@ commit a1b2c3d
 
 ```bash
 # Install
-npm install -g agent-lease
+npm install -g agentguard
 
 # Initialize hooks
-npx agent-lease init
+npx agentguard init
 
 # Try to commit (creates lock, blocks)
 git commit -m "my changes"
 
 # Run validation to release
-npx agent-lease release --audit-proof
+npx agentguard release --audit-proof
 
 # Commit again (succeeds with proof)
 git commit -m "my changes"
@@ -260,12 +260,12 @@ npx husky init
 **`.husky/pre-commit`:**
 ```bash
 #!/bin/bash
-# Delegate to agent-lease
+# Delegate to agentguard
 exec < /dev/tty
-npx agent-lease status --phase commit
+npx agentguard status --phase commit
 if [ $? -ne 0 ]; then
   echo ""
-  echo "🔒 Run: npx agent-lease release --audit-proof"
+  echo "🔒 Run: npx agentguard release --audit-proof"
   echo ""
   exit 1
 fi
@@ -275,16 +275,16 @@ fi
 ```bash
 #!/bin/bash
 exec < /dev/tty
-npx agent-lease status --phase push
+npx agentguard status --phase push
 if [ $? -ne 0 ]; then
   echo ""
-  echo "🔒 Run: npx agent-lease release --audit-proof --phase push"
+  echo "🔒 Run: npx agentguard release --audit-proof --phase push"
   echo ""
   exit 1
 fi
 ```
 
-Or just use `npx agent-lease init` which installs the hooks directly.
+Or just use `npx agentguard init` which installs the hooks directly.
 
 ---
 
@@ -292,11 +292,11 @@ Or just use `npx agent-lease init` which installs the hooks directly.
 
 ### Install as a Claude Code Skill
 
-agent-lease is available on [ClawdHub](https://clawhub.ai) — the public skill registry for Claude Code. Install it as a skill so your agent always knows how to use it:
+agentguard is available on [ClawdHub](https://clawhub.ai) — the public skill registry for Claude Code. Install it as a skill so your agent always knows how to use it:
 
 ```bash
-# Install agent-lease skill
-npx clawdhub@latest install agent-lease
+# Install agentguard skill
+npx clawdhub@latest install agentguard
 
 # Or search for validation skills
 npx clawdhub@latest search "validation"
@@ -316,12 +316,12 @@ Created a custom LLM reviewer or validation pipeline? Publish it:
 npx clawdhub@latest publish ./my-validation-skill \
   --slug my-validation-skill \
   --version 1.0.0 \
-  --tags "validation,agent-lease,code-review"
+  --tags "validation,agentguard,code-review"
 ```
 
 ### With Claude Code Hooks
 
-Claude Code CLI has a hooks system you can use for even tighter integration. Some nifty tricks coming in future posts, but agent-lease is the highest leverage validation gate you can set up in a few minutes and start seeing your cortisol levels go down.
+Claude Code CLI has a hooks system you can use for even tighter integration. Some nifty tricks coming in future posts, but agentguard is the highest leverage validation gate you can set up in a few minutes and start seeing your cortisol levels go down.
 
 ```json
 // .claude/settings.json
@@ -330,7 +330,7 @@ Claude Code CLI has a hooks system you can use for even tighter integration. Som
     "PreToolUse": [
       {
         "matcher": "Bash(git commit*)",
-        "hooks": ["npx agent-lease status --phase commit"]
+        "hooks": ["npx agentguard status --phase commit"]
       }
     ]
   }
@@ -349,7 +349,7 @@ You can create a **layered set of gates** all in the service of staying in the a
 
 ## Configuration
 
-`.agent-lease.json`:
+`.agentguard.json`:
 
 ```json
 {
@@ -389,28 +389,28 @@ You can create a **layered set of gates** all in the service of staying in the a
 
 | Value | Location |
 |-------|----------|
-| `"auto"` | `$XDG_RUNTIME_DIR/agent-lease/` or `/tmp` |
-| `"local"` | `.agent-lease/locks/` (project-local) |
+| `"auto"` | `$XDG_RUNTIME_DIR/agentguard/` or `/tmp` |
+| `"local"` | `.agentguard/locks/` (project-local) |
 
 ---
 
 ## CLI Reference
 
 ```bash
-agent-lease init                                    # Install hooks
-agent-lease release --audit-proof                   # Run runners, release (v2)
-agent-lease release --audit-proof='<proof>'         # Accept proof text (v3.2)
-agent-lease release --audit-proof --phase push      # Push phase
-agent-lease status                                  # Check lock state
-agent-lease runners                                 # List configured runners
-agent-lease clear                                   # Remove stale locks
+agentguard init                                    # Install hooks
+agentguard release --audit-proof                   # Run runners, release (v2)
+agentguard release --audit-proof='<proof>'         # Accept proof text (v3.2)
+agentguard release --audit-proof --phase push      # Push phase
+agentguard status                                  # Check lock state
+agentguard runners                                 # List configured runners
+agentguard clear                                   # Remove stale locks
 ```
 
 ---
 
 ## Why Lock/Lease?
 
-Other tools run validation **during** the commit. agent-lease is different:
+Other tools run validation **during** the commit. agentguard is different:
 
 1. **First commit creates a lock** and blocks
 2. **You must explicitly run validation** to release
@@ -423,11 +423,11 @@ This **forces** the step. No accidents. No "I'll fix it later." No `--no-verify`
 ## Get Started
 
 ```bash
-npm install -g agent-lease
-npx agent-lease init
+npm install -g agentguard
+npx agentguard init
 ```
 
-- **GitHub:** [github.com/chidev/agent-lease](https://github.com/chidev/agent-lease)
+- **GitHub:** [github.com/chidev/agentguard](https://github.com/chidev/agentguard)
 - **ClawdHub:** [clawhub.ai](https://clawhub.ai)
 - **Sponsor:** [kinglystudio.ai](https://kinglystudio.ai)
 
